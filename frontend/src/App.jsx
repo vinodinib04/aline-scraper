@@ -1,61 +1,63 @@
-import React, { useState } from "react"
-import { motion } from "framer-motion"
+import { useState } from "react";
 
 export default function App() {
-  const [url, setUrl] = useState("")
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [url, setUrl] = useState("");
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleScrape = async () => {
-    setLoading(true)
-    setData(null)
-    try {
-      const API_BASE = import.meta.env.VITE_API_URL
-      const res = await fetch(`${API_BASE}/scrape`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      })
-      const json = await res.json()
-      setData(json)
-    } catch (e) {
-      alert("Error: " + e.message)
+    if (!url) {
+      alert("Please enter a website URL");
+      return;
     }
-    setLoading(false)
-  }
+
+    setLoading(true);
+    try {
+      const res = await fetch(`https://aline-backend.onrender.com/scrape?site=${encodeURIComponent(url)}`);
+      const json = await res.json();
+      setData(json);
+    } catch (e) {
+      alert("Failed to scrape site.");
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-white to-gray-100">
-      <motion.h1
-        className="text-4xl font-bold mb-6"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
+    <div className="p-8 font-sans max-w-4xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">Aline Knowledgebase Scraper</h1>
+      
+      <input
+        type="text"
+        placeholder="Enter website URL"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        className="border p-2 w-full mb-4"
+      />
+      
+      <button
+        onClick={handleScrape}
+        className="bg-blue-600 text-white px-4 py-2 rounded"
+        disabled={loading}
       >
-        Aline Scraper
-      </motion.h1>
-
-      <div className="flex gap-2 mb-6">
-        <input
-          type="text"
-          placeholder="Enter site URL..."
-          className="px-4 py-2 border rounded-xl w-96 shadow-sm"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-        />
-        <button
-          onClick={handleScrape}
-          className="bg-black text-white px-6 py-2 rounded-xl shadow hover:bg-gray-800"
-          disabled={loading}
-        >
-          {loading ? "Scraping..." : "Import"}
-        </button>
-      </div>
+        {loading ? "Scraping..." : "Scrape"}
+      </button>
 
       {data && (
-        <div className="bg-white shadow-xl rounded-2xl p-6 w-3/4 max-w-3xl overflow-auto h-[400px]">
-          <pre className="text-sm whitespace-pre-wrap">{JSON.stringify(data, null, 2)}</pre>
+        <div className="mt-8">
+          <h2 className="text-xl font-bold mb-2">Results for {data.site}</h2>
+          {data.items.length === 0 && <p>No pages found or failed to scrape.</p>}
+          {data.items.map((item, i) => (
+            <div key={i} className="mb-4 border p-2 rounded">
+              <h3 className="font-semibold">{item.title}</h3>
+              <p><strong>Type:</strong> {item.content_type}</p>
+              <a href={item.source_url} target="_blank" className="text-blue-500 underline">Source</a>
+              <pre className="bg-gray-100 p-2 mt-2 overflow-x-auto">{item.content}</pre>
+            </div>
+          ))}
         </div>
       )}
     </div>
-  )
+  );
 }
