@@ -1,7 +1,0 @@
-fastapi
-uvicorn
-gunicorn
-httpx
-beautifulsoup4
-readability-lxml
-markdownify
